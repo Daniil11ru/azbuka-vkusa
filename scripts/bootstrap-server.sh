@@ -138,11 +138,18 @@ get_or_create_secret() {
 
   if [ -n "\$provided" ]; then
     printf '%s' "\$provided"
-  elif [ -f .env ] && grep -q "^\${name}=" .env; then
-    grep "^\${name}=" .env | tail -n 1 | cut -d= -f2-
-  else
-    openssl rand -hex 32
+    return
   fi
+
+  if [ -f .env ]; then
+    existing=\$(grep "^\${name}=" .env | tail -n 1 | cut -d= -f2- || true)
+    if [ -n "\$existing" ]; then
+      printf '%s' "\$existing"
+      return
+    fi
+  fi
+
+  openssl rand -hex 32
 }
 
 POSTGRES_PASSWORD_VALUE=\$(get_or_create_secret POSTGRES_PASSWORD "\${POSTGRES_PASSWORD_INPUT:-}")
