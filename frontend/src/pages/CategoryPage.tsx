@@ -4,9 +4,9 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { api } from "../api/client";
 import { Product, Store } from "../api/types";
+import DatePicker, { toLocalISO } from "../components/DatePicker";
 import {
   IconArrowLeft,
-  IconCalendar,
   IconSearch,
   IconSparkles,
   IconStore,
@@ -26,7 +26,7 @@ const FILTERS = [
 function tomorrowISO(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return toLocalISO(d);
 }
 
 export default function CategoryPage() {
@@ -112,8 +112,8 @@ export default function CategoryPage() {
         </p>
       </div>
 
-      {/* Панель параметров расчёта */}
-      <div className="flex animate-fade-up flex-wrap items-center gap-3 rounded-2xl bg-white p-4 shadow-card">
+      {/* Панель параметров расчёта; z-30 — чтобы календарь раскрывался поверх секций ниже */}
+      <div className="relative z-30 flex animate-fade-up flex-wrap items-center gap-3 rounded-2xl bg-white p-4 shadow-card">
         <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2">
           <IconStore className="h-4 w-4 text-pine-600" />
           <select
@@ -131,16 +131,11 @@ export default function CategoryPage() {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2">
-          <IconCalendar className="h-4 w-4 text-pine-600" />
-          <input
-            type="date"
-            value={targetDate}
-            min={new Date().toISOString().slice(0, 10)}
-            onChange={(e) => setTargetDate(e.target.value)}
-            className="bg-transparent text-sm font-medium outline-none"
-          />
-        </div>
+        <DatePicker
+          value={targetDate}
+          min={toLocalISO(new Date())}
+          onChange={setTargetDate}
+        />
         <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2">
           <IconSearch className="h-4 w-4 text-slate-400" />
           <input

@@ -81,6 +81,56 @@ npm run dev
 docker run --rm ilya-api python -m pytest tests/ -q
 ```
 
+## CI/CD
+
+Ручной деплой выполняет GitHub Action `Deploy`: он не собирает образы, а только
+загружает на сервер `docker-compose.prod.yml` и `Caddyfile`, затем запускает
+`docker compose pull && docker compose up -d` для образов с тегом `latest`.
+Продакшен доступен по адресу https://v3180765.hosted-by-vdsina.ru, TLS-сертификат
+автоматически выпускает и продлевает Caddy через Let's Encrypt.
+
+Нужные GitHub Secrets:
+
+| Secret | Значение |
+|---|---|
+| `SERVER_HOST` | IP или домен сервера |
+| `SERVER_USER` | SSH-пользователь |
+| `SERVER_PASSWORD` | SSH-пароль |
+| `DOMAIN` | Домен продакшена, по умолчанию `v3180765.hosted-by-vdsina.ru` |
+| `GHCR_TOKEN` | PAT с `read:packages`, если GHCR-образы приватные |
+| `GHCR_USERNAME` | GitHub-пользователь для `GHCR_TOKEN` |
+| `POSTGRES_PASSWORD` | Пароль PostgreSQL, опционально |
+| `JWT_SECRET` | Секрет JWT, опционально |
+
+Если `POSTGRES_PASSWORD` или `JWT_SECRET` не заданы, workflow сгенерирует их на
+сервере при первом деплое и сохранит в `/opt/azbuka-vkusa/.env`.
+
+Перед деплоем нужно вручную собрать и запушить все образы:
+
+```bash
+docker login ghcr.io
+REGISTRY=ghcr.io/daniil11ru/azbuka-vkusa TAG=latest ./scripts/build-and-push.sh
+```
+
+Production compose-файл лежит в корне: `docker-compose.prod.yml`, reverse proxy
+настраивается через `Caddyfile`.
+
+Первично подготовить новый Ubuntu/Debian сервер и сразу поднять решение можно
+скриптом:
+
+```bash
+SERVER_HOST=91.184.244.200 \
+SERVER_USER=root \
+SERVER_PASSWORD='ssh-password' \
+DOMAIN=v3180765.hosted-by-vdsina.ru \
+GHCR_USERNAME=github-user \
+GHCR_TOKEN='github-token-with-read-packages' \
+./scripts/bootstrap-server.sh
+```
+
+Если подключение идёт по SSH-ключу, `SERVER_PASSWORD` можно не задавать. Для
+password-based SSH локально должен быть установлен `sshpass`.
+
 ## Структура
 
 ```
@@ -92,4 +142,7 @@ frontend/
   src/pages/      # 5 экранов: Login, Dashboard, Category, Calculation, Results
   src/components/ # график спроса, ценовой коридор, факторы, статусы
 docker-compose.yml
+docker-compose.prod.yml
+Caddyfile
+scripts/bootstrap-server.sh
 ```

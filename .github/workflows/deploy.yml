@@ -1,0 +1,96 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_PATH: /opt/azbuka-vkusa
+      DOMAIN: ${{ secrets.DOMAIN || 'v3180765.hosted-by-vdsina.ru' }}
+      TAG: latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set image registry
+        id: image
+        run: echo "registry=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare deploy directory
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: mkdir -p /opt/azbuka-vkusa
+
+      - name: Upload deployment files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          source: docker-compose.prod.yml,Caddyfile
+          target: ${{ env.DEPLOY_PATH }}
+
+      - name: Redeploy on server
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME || github.actor }}
+          IMAGE_REGISTRY: ${{ steps.image.outputs.registry }}
+          DOMAIN: ${{ env.DOMAIN }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          TAG: ${{ env.TAG }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          envs: GHCR_TOKEN,GHCR_USERNAME,IMAGE_REGISTRY,DOMAIN,JWT_SECRET,POSTGRES_PASSWORD,TAG
+          script: |
+            set -eu
+
+            cd /opt/azbuka-vkusa
+
+            get_or_create_secret() {
+              name="$1"
+              provided="$2"
+
+              if [ -n "$provided" ]; then
+                printf '%s' "$provided"
+              elif [ -f .env ] && grep -q "^${name}=" .env; then
+                grep "^${name}=" .env | tail -n 1 | cut -d= -f2-
+              else
+                openssl rand -hex 32
+              fi
+            }
+
+            POSTGRES_PASSWORD_VALUE=$(get_or_create_secret POSTGRES_PASSWORD "${POSTGRES_PASSWORD:-}")
+            JWT_SECRET_VALUE=$(get_or_create_secret JWT_SECRET "${JWT_SECRET:-}")
+
+            {
+              printf 'IMAGE_REGISTRY=%s\n' "$IMAGE_REGISTRY"
+              printf 'IMAGE_TAG=%s\n' "$TAG"
+              printf 'DOMAIN=%s\n' "$DOMAIN"
+              printf 'POSTGRES_DB=pricing\n'
+              printf 'POSTGRES_USER=pricing\n'
+              printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD_VALUE"
+              printf 'JWT_SECRET=%s\n' "$JWT_SECRET_VALUE"
+            } > .env.tmp
+            mv .env.tmp .env
+            chmod 600 .env
+
+            if [ -n "${GHCR_TOKEN:-}" ]; then
+              printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USERNAME:-${USER}}" --password-stdin
+            fi
+
+            docker compose --env-file .env -f docker-compose.prod.yml pull
+            docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f
