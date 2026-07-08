@@ -94,6 +94,11 @@ jobs:
             mv .env.tmp .env
             chmod 600 .env
 
+            # Переменные сессии (пустые, если секреты не заданы) имеют приоритет
+            # над --env-file — перекрываем их итоговыми значениями из .env
+            export POSTGRES_PASSWORD="$POSTGRES_PASSWORD_VALUE"
+            export JWT_SECRET="$JWT_SECRET_VALUE"
+
             if [ -n "${GHCR_TOKEN:-}" ]; then
               printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USERNAME:-${USER}}" --password-stdin
             fi
