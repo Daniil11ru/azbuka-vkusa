@@ -13,7 +13,7 @@ import {
   IconTrendDown,
   IconTrendUp,
 } from "../components/Icons";
-import { ErrorNote, formatPrice, SignalChip, Spinner } from "../components/ui";
+import { ErrorNote, formatPrice, SignalChip, Spinner, TableScroll } from "../components/ui";
 
 const FILTERS = [
   { key: "all", label: "Все" },
@@ -169,10 +169,11 @@ export default function CategoryPage() {
 
       {/* Таблица SKU */}
       {products.data && (
-        <div className="scrollbar-thin animate-fade-up overflow-x-auto rounded-2xl bg-white shadow-card">
-          <table className="w-full min-w-[720px] text-sm">
+        <div className="animate-fade-up rounded-2xl bg-white shadow-card">
+          <TableScroll>
+            <table className="w-full min-w-[960px] text-sm">
             <thead>
-              <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
+              <tr className="whitespace-nowrap border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
                 <th className="w-10 px-4 py-3">
                   <input
                     type="checkbox"
@@ -214,7 +215,7 @@ export default function CategoryPage() {
                       {p.is_private_label && " · СТМ"}
                     </div>
                   </td>
-                  <td className="px-3 py-3 text-right font-semibold tabular-nums">
+                  <td className="whitespace-nowrap px-3 py-3 text-right font-semibold tabular-nums">
                     {formatPrice(p.current_price)}
                   </td>
                   <td className="px-3 py-3 text-right tabular-nums text-slate-600">
@@ -259,7 +260,8 @@ export default function CategoryPage() {
                 </tr>
               )}
             </tbody>
-          </table>
+            </table>
+          </TableScroll>
         </div>
       )}
 

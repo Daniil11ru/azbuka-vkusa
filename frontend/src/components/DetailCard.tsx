@@ -179,9 +179,16 @@ export function FactorBars({ detail }: { detail: RecommendationDetail }) {
           </div>
         );
       })}
-      <div className="flex justify-between px-[142px] text-[10px] text-slate-400">
-        <span>давит на снижение</span>
-        <span>давит на повышение</span>
+      {/* легенда на всю ширину карточки: под самой шкалой подписям не хватает места */}
+      <div className="flex items-center justify-between pt-0.5 text-[10px] text-slate-400">
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+          давит на снижение
+        </span>
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
+          давит на повышение
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-pine-500" />
+        </span>
       </div>
     </div>
   );

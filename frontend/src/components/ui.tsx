@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 import { RecommendationStatus } from "../api/types";
 import { IconX } from "./Icons";
@@ -112,6 +112,77 @@ export function ErrorNote({ message }: { message: string }) {
   return (
     <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
       {message}
+    </div>
+  );
+}
+
+/**
+ * Горизонтальный скролл для широких таблиц: градиенты у краёв показывают,
+ * что контент продолжается, а до первого свайпа висит пульсирующая стрелка.
+ */
+export function TableScroll({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const update = () => {
+    const el = ref.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    update();
+  });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="relative">
+      <div ref={ref} onScroll={update} className="scrollbar-thin overflow-x-auto rounded-2xl">
+        {children}
+      </div>
+      {canLeft && (
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 rounded-l-2xl bg-gradient-to-r from-white to-transparent" />
+      )}
+      {canRight && (
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-12 rounded-r-2xl bg-gradient-to-l from-white via-white/50 to-transparent" />
+      )}
+      {canRight && !canLeft && (
+        // sticky внутри absolute: стрелка едет вместе со страницей, пока таблица на экране
+        <div className="pointer-events-none absolute inset-y-14 right-2.5">
+          <button
+            type="button"
+            aria-label="Пролистать таблицу вправо"
+            onClick={() =>
+              ref.current?.scrollBy({
+                left: Math.round(ref.current.clientWidth * 0.6),
+                behavior: "smooth",
+              })
+            }
+            className="pointer-events-auto sticky top-[45vh] flex h-9 w-9 animate-pulse-soft items-center justify-center rounded-full bg-pine-800/90 text-white shadow-lg transition hover:bg-pine-700"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
