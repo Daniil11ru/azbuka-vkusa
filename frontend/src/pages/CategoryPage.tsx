@@ -169,8 +169,8 @@ export default function CategoryPage() {
 
       {/* Таблица SKU */}
       {products.data && (
-        <div className="animate-fade-up overflow-hidden rounded-2xl bg-white shadow-card">
-          <table className="w-full text-sm">
+        <div className="scrollbar-thin animate-fade-up overflow-x-auto rounded-2xl bg-white shadow-card">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
                 <th className="w-10 px-4 py-3">
