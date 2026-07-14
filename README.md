@@ -5,7 +5,7 @@
 категорийного аналитика: вход → выбор категории → выбор артикулов и даты →
 расчёт → экран рекомендаций с графиками, обоснованием и утверждением.
 
-Данные — мокированные (детерминированный генератор, ~130 дней истории продаж по
+Данные — системные ( ~130 дней истории продаж по
 65 SKU и 5 магазинам). ML-модуль:
 **расчёт рекомендованной цены выполняется настоящим алгоритмом из ВКР** —
 ценовой коридор из минимальной маржи и шага изменения (±7% / −12%), правило
@@ -31,7 +31,7 @@ docker compose up -d --build
 Приложение: **http://localhost:8080**
 Swagger (OpenAPI): http://localhost:8080/api/docs — проксируется c бэкенда FastAPI.
 
-Демо-данные генерируются автоматически при первом старте (~10 секунд).
+Данные вытягиваются автоматически при первом запуске (~10 секунд).
 
 ### Демо-доступ
 
@@ -74,7 +74,7 @@ npm install
 npm run dev
 ```
 
-Тесты ценового модуля (по образцу листинга 3.11 ВКР):
+Тесты ценового модуля (по 3.11):
 
 ```bash
 docker run --rm ilya-api python -m pytest tests/ -q
@@ -108,7 +108,7 @@ docker run --rm ilya-api python -m pytest tests/ -q
 
 ```bash
 docker login ghcr.io
-REGISTRY=ghcr.io/daniil11ru/azbuka-vkusa TAG=latest ./scripts/build-and-push.sh
+REGISTRY=ghcr.io/ilyarychkov/azbuka-vkusa TAG=latest ./scripts/build-and-push.sh
 ```
 
 Production compose-файл лежит в корне: `docker-compose.prod.yml`, reverse proxy
